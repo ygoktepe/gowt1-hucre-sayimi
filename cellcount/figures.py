@@ -54,10 +54,10 @@ def overlay(ax, image, labels, title, tracking=None):
 
 
 def intensity_figure(image, configs, output):
-    pairs = [('E02', 'Özgün'), ('E04', 'Kontrast germe (%1–99,5)'),
+    pairs = [('E02', 'Özgün'), ('E04', 'Germe (%1–99,5)'),
              ('E05', 'Histogram eşitleme'), ('E06', 'CLAHE (2,0 / 8×8)'),
-             ('E07', 'Gamma (0,40)')]
-    fig, axes = plt.subplots(2, len(pairs), figsize=(12.1, 4.05), layout='constrained',
+             ('E07', 'Gamma (0,40)'), ('E28', 'Gamma (0,25)')]
+    fig, axes = plt.subplots(2, len(pairs), figsize=(14.0, 4.05), layout='constrained',
                              gridspec_kw={'height_ratios': [3.2, 1]})
     for column, (key, name) in enumerate(pairs):
         intensity = process(image, configs[key], keep_steps=True).steps['intensity']
