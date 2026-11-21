@@ -147,15 +147,21 @@ def marker_diagnostics(labels, tracking):
 
 
 def examples_figure(data, samples, config, output, *, tested):
-    samples = sorted(samples, key=lambda pair: (abs(pair[2] - pair[1]), pair[0]['frame']))
-    easy = samples[0]
-    hardest = samples[-1]
+    ranked = sorted(samples, key=lambda pair: (abs(pair[2] - pair[1]), pair[0]['frame']))
+    easy, hardest = ranked[0], ranked[-1]
     remaining = [pair for pair in samples if pair not in (easy, hardest)]
-    # Choose a separate informative example with a nonzero count error when possible.
-    hard = max(remaining, key=lambda pair: (abs(pair[2] - pair[1]), pair[0]['frame']))
+    if tested:
+        ordered = sorted(samples, key=lambda pair: pair[0]['frame'])
+        jumps = [(abs((right[2] - right[1]) - (left[2] - left[1])), right[0]['frame'], right)
+                 for left, right in zip(ordered, ordered[1:])
+                 if left[0]['block'] == right[0]['block'] and right in remaining]
+        hard = max(jumps)[2]
+    else:
+        hard = max(remaining, key=lambda pair: (abs(pair[2] - pair[1]), pair[0]['frame']))
     fig, axes = plt.subplots(1, 3, figsize=(10.35, 3.45), layout='constrained')
     diagnostics = []
-    for ax, name, (row, reference, prediction) in zip(axes, ('Düşük hata', 'Diğer örnek', 'En yüksek hata'),
+    middle = 'Zamansal sıçrama' if tested else 'Diğer örnek'
+    for ax, name, (row, reference, prediction) in zip(axes, ('En düşük hata', middle, 'En yüksek hata'),
                                                      (easy, hard, hardest)):
         image = data.image(row)
         truth = data.tracking_labels(row, allow_test=tested)
@@ -169,6 +175,16 @@ def examples_figure(data, samples, config, output, *, tested):
     (output / 'examples.json').write_text(json.dumps(diagnostics, indent=2), encoding='utf-8')
 
 
+def describe_test_images(data, rows, output):
+    statistics = []
+    for row in rows:
+        image = data.image(row)
+        statistics.append(dict(frame=row['frame'], shape=image.shape, dtype=str(image.dtype),
+                               median=float(np.median(image)), p99=float(np.percentile(image, 99)),
+                               maximum=int(image.max())))
+    (output / 'test_intensity_statistics.json').write_text(json.dumps(statistics, indent=2), encoding='utf-8')
+
+
 def contact_sheet(data, rows, config, output):
     fig, axes = plt.subplots(2, 5, figsize=(11.3, 5.15), layout='constrained')
     for ax, row in zip(axes.flat, rows):
@@ -177,6 +193,37 @@ def contact_sheet(data, rows, config, output):
         result = process(image, config)
         overlay(ax, image, result.labels, f"t{row['frame']:03d} · {reference_count(truth)}/{result.count}", truth)
     finish(fig, output, 'appendix_development')
+
+
+def baseline_figure(image, output):
+    result = process(image, BASELINE, keep_steps=True)
+    crop = np.s_[288:672, 288:672]
+    fig, axes = plt.subplots(1, 3, figsize=(10.35, 3.5), layout='constrained')
+    show(axes[0], image[crop], 'Ham TIFF · merkez kesiti')
+    show(axes[1], result.steps['threshold'][crop], 'Otsu ön planı', mask=True)
+    overlay(axes[2], image[crop], result.labels[crop], 'B00 bileşenlerinin konturları')
+    finish(fig, output, 'appendix_baseline')
+
+
+def watershed_figure(image, configs, output):
+    before = process(image, configs['E03'])
+    after = process(image, configs['E27'], keep_steps=True)
+    parents = np.unique(before.labels[after.steps['markers'] > 0])
+    for parent in parents[parents > 0]:
+        region = before.labels == parent
+        if np.count_nonzero(np.unique(after.labels[region]) > 0) > 1:
+            yy, xx = np.where(region)
+            crop = np.s_[max(0, yy.min() - 34):yy.max() + 35, max(0, xx.min() - 34):xx.max() + 35]
+            break
+    else:
+        crop = np.s_[:, :]
+    fig, axes = plt.subplots(1, 3, figsize=(10.35, 3.45), layout='constrained')
+    overlay(axes[0], image[crop], before.labels[crop], f'E03 · karede {before.count} etiket')
+    show(axes[1], after.steps['distance'][crop], 'Öklid uzaklığı ve işaretleyiciler')
+    yy, xx = np.where(after.steps['markers'][crop] > 0)
+    axes[1].scatter(xx, yy, marker='+', s=30, c='#ffcf64', linewidths=1.2)
+    overlay(axes[2], image[crop], after.labels[crop], f'E27 · karede {after.count} etiket')
+    finish(fig, output, 'appendix_watershed')
 
 
 def main():
@@ -216,6 +263,10 @@ def main():
         pipeline_figure(data.image(dev[5]), config, args.output)
         examples_figure(data, samples, config, args.output, tested=tested)
         contact_sheet(data, dev, config, args.output)
+        baseline_figure(data.image(dev[3]), args.output)
+        watershed_figure(data.image(dev[-1]), configs, args.output)
+        if tested:
+            describe_test_images(data, test.values(), args.output)
     path = scored if tested else args.results / 'test_predictions_locked.csv'
     temporal_figure(read_csv(path), args.output)
 

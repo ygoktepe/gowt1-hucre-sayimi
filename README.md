@@ -46,28 +46,15 @@ Başka bir tekrar için farklı bir `--out` klasörü kullanın. Defter, varsay�
 
 Teslim edilen protokolün değerlendirme adımı, deponun kökündeki kare seçimini, pipeline parametrelerini, tahminleri ve bağlantılı kodu GitHub'da önceden gönderilmiş kilit commit'i ile karşılaştırır. Kilitli dosyaları yeniden üretim klasöründeki kopyalarla değiştirmeyin.
 
-Bir Git bundle teslim edildiyse, aşağıdaki örnekle commit geçmişini koruyarak açabilirsiniz. Örnek uzak depo adresini kendi GitHub deponuzun adresiyle değiştirin. [GitHub'da depo oluşturma](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository)
+Bağımsız değerlendirmeyi yeniden çalıştırmak için GitHub deposunu `git clone` ile klonlayın. ZIP kopyası geliştirme deneylerini ve kilitli tahminleri yeniden üretmek için yeterlidir. GitHub doğrulaması depo geçmişi üzerinden yürür.
 
 ```powershell
-git clone 'C:\tam\yol\proje.bundle' gowt1
-Set-Location gowt1
-git remote set-url origin 'https://github.com/KULLANICI/DEPO.git'
-git log --oneline --decorate
-```
-
-GitHub deponuzda henüz test sonucu yoksa tahmin commit'ini `main` dalına gönderin. `$lock` için `final_pipeline.json` ve `test_predictions_locked.csv` dosyalarını ilk kez kaydeden commit'in kimliğini kullanın. Ayrı bir dal kullanıyorsanız hem gönderme komutunda hem değerlendirme seçeneğinde dalın adını yazın.
-
-```powershell
-$lock = 'KILIT_COMMIT_SHA'
-git push origin "${lock}:refs/heads/main"
+$lock = git log -1 --format=%H -- test_predictions_locked.csv
 & $python -m cellcount.run evaluate --data $data --out . --lock-commit $lock --branch main
-& $python -m cellcount.figures --data $data --results . --output '..\gowt1-private-figures'
-git add test_results.csv test_metrics.csv
-git commit -m 'Bağımsız test metriklerini kaydet'
-git push -u origin main
+& $python -m cellcount.figures --data $data --results . --output '..\gowt1-private-figures' --lock-commit $lock --branch main
 ```
 
-Depoda değerlendirme commit'i zaten varsa kilit için özgün tahmin commit'inin kimliğini kullanın. Araç, tahmin commit'inin uzak dalın geçmişinde bulunduğunu da doğrulayabilir. Özel bir GitHub deposu kullanıyorsanız öğretim elemanına erişim verin.
+Kilit commit’i, `final_pipeline.json` ve `test_predictions_locked.csv` dosyalarını ilk kez kaydeder. Bu commit GitHub'a gönderilip doğrulandıktan sonra referanslar açılır. Bağımsız metrikler sonraki bir commit'te kaydedilir. Araç, tahmin commit'inin uzak dalın geçmişinde bulunduğunu da doğrulayabilir. Özel bir GitHub deposu kullanıyorsanız öğretim elemanına erişim verin.
 
 ## Dosyalar
 
@@ -89,3 +76,5 @@ Depoda değerlendirme commit'i zaten varsa kilit için özgün tahmin commit'ini
 | `test_results.csv`, `test_metrics.csv` | Bağımsız değerlendirme yapıldığında üretilen sayımlar, hatalar ve özet metrikler |
 
 Özel görsellerde yoğunluk ve histogram panelleri, eşikleme karşılaştırmaları, nihai pipeline adımları, örnek kareler ve zamansal sayım grafiği bulunur. GitHub'a veri ZIP'ini, TIFF dosyalarını, örnek kare görsellerini ve gömülü defter çıktılarını yüklemeyin. Defteri kaydederken bütün hücre çıktılarını temizleyin.
+
+Veri kaynağı Cell Tracking Challenge ve Dr. E. Bártová'dır. [Maška ve diğerleri, Nature Methods, 2023](https://doi.org/10.1038/s41592-023-01879-y) · [CTC veri kullanım koşulları](https://celltrackingchallenge.net/datasets/)
