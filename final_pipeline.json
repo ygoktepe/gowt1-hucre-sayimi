@@ -1,0 +1,71 @@
+{
+  "seed": 29033,
+  "final": {
+    "id": "E24",
+    "family": "adaptive",
+    "intensity": "original",
+    "filter": "gaussian",
+    "segmentation": "adaptive",
+    "morphology": [
+      "opening",
+      "closing"
+    ],
+    "stretch_percentiles": [
+      1.0,
+      99.5
+    ],
+    "clahe_clip": 2.0,
+    "clahe_grid": 8,
+    "gamma": 0.4,
+    "kernel_size": 5,
+    "fixed_threshold": 9.0,
+    "adaptive_block": 121,
+    "adaptive_c": -2,
+    "morph_size": 5,
+    "fill_holes": true,
+    "min_area": 250,
+    "split": false,
+    "peak_distance": 24,
+    "peak_min_radius": 7.0
+  },
+  "baseline": {
+    "id": "B00",
+    "family": "baseline",
+    "intensity": "original",
+    "filter": "none",
+    "segmentation": "otsu",
+    "morphology": [],
+    "stretch_percentiles": [
+      1.0,
+      99.5
+    ],
+    "clahe_clip": 2.0,
+    "clahe_grid": 8,
+    "gamma": 0.4,
+    "kernel_size": 3,
+    "fixed_threshold": 9.0,
+    "adaptive_block": 121,
+    "adaptive_c": -4.0,
+    "morph_size": 5,
+    "fill_holes": false,
+    "min_area": 0,
+    "split": false,
+    "peak_distance": 24,
+    "peak_min_radius": 7.0
+  },
+  "validation": {
+    "mae": 1.4,
+    "rmse": 1.61245154965971,
+    "mean_ms": 78.72528666678895
+  },
+  "sha256": {
+    "selected_frames.csv": "ef4849a0baa14ae6483f9a5bdf41b31cc169c9e190eedb422d6bbaa5ab146934",
+    "test_predictions_locked.csv": "2115b2436718e141f27a788a6dbb0a3568f1219a4aba3cf6513273e9df484f78"
+  },
+  "code_sha256": {
+    "data.py": "bbca51218f81cad8d7b678aa9ff6cf1c06c610a303190d393725710dbc936542",
+    "pipeline.py": "56dfe9a5f4289d9a0ace80d3635bceb120fa9fbb28e51133c62509ce7b884aaa",
+    "run.py": "6031138fbb9e5277456f88bb8956690bf565fb5d77f2e334df5e76a2f26562e6"
+  },
+  "timing_repeats": 3
+}

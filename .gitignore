@@ -1,0 +1,14 @@
+__pycache__/
+.ipynb_checkpoints/
+.venv/
+.env
+data/
+private_figures/
+reproduction/
+*.tif
+*.tiff
+*.zip
+*.png
+*.pdf
+*.pptx
+
